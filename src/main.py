@@ -4,8 +4,10 @@ from pathlib import Path
 
 input_dir = Path("input")
 output_dir = Path("output")
+thumbnail_dir = output_dir / "thumbnails"
 
 output_dir.mkdir(parents=True, exist_ok=True)
+thumbnail_dir.mkdir(parents=True, exist_ok=True)
 
 if input_dir.exists() and input_dir.is_dir():
     print("Input dir exists")
@@ -45,7 +47,14 @@ for path in input_dir.iterdir():
 
         print(f"Resized img size: {img_resize.size}")
 
+        img_thumbnail = img.copy()
+        img_thumbnail.thumbnail((300, 300), Resampling.LANCZOS)
+        img_thumbnail.save(thumbnail_dir / path.name)
+
+        print(f"Thumbnail size: {img_thumbnail.size}")
+
 if processed_count > 0:
     print(f"Processed {processed_count} images")
 else:
     print("No supported images found in input directory. Supported formats: .jpg, .jpeg, .png")
+
