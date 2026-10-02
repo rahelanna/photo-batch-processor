@@ -43,9 +43,11 @@ for path in input_dir.iterdir():
         target_width = round(width * scale)
 
         img_resize =  img.resize((target_width, target_height), Resampling.LANCZOS)
-        img_resize.save(output_dir / path.name)
+        output_path = output_dir / path.with_suffix(".webp").name
+        img_resize.save(output_path, format="webp", quality=85)
 
         print(f"Resized img size: {img_resize.size}")
+        print(f"Saved resize image to: {output_path}")
 
         img_thumbnail = img.copy()
         img_thumbnail.thumbnail((300, 300), Resampling.LANCZOS)
