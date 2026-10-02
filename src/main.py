@@ -5,7 +5,16 @@ from pathlib import Path
 input_dir = Path("input")
 output_dir = Path("output")
 
+output_dir.mkdir(parents=True, exist_ok=True)
+
+if input_dir.exists() and input_dir.is_dir():
+    print("Input dir exists")
+else:
+    print("Input dir doesn't exist")
+    exit(1)
+
 supported_formats = {".jpg", ".jpeg", ".png"}
+processed_count = 0
 
 print("input:")
 
@@ -14,6 +23,7 @@ for path in input_dir.iterdir():
     if extension not in supported_formats:
         continue
     print(path.name)
+    processed_count += 1
 
 
     with Image.open(path) as img:
@@ -34,3 +44,8 @@ for path in input_dir.iterdir():
         img_resize.save(output_dir / path.name)
 
         print(f"Resized img size: {img_resize.size}")
+
+if processed_count > 0:
+    print(f"Processed {processed_count} images")
+else:
+    print("No supported images found in input directory. Supported formats: .jpg, .jpeg, .png")
