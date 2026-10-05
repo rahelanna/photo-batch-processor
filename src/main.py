@@ -1,6 +1,8 @@
-from PIL import Image
+from PIL import Image, ImageOps
 from PIL.Image import Resampling
+from PIL.ExifTags import TAGS
 from pathlib import Path
+import csv
 
 input_dir = Path("input")
 output_dir = Path("output")
@@ -18,6 +20,8 @@ else:
 supported_formats = {".jpg", ".jpeg", ".png"}
 processed_count = 0
 
+metadata_records = []
+
 print("input:")
 
 for path in input_dir.iterdir():
@@ -29,14 +33,39 @@ for path in input_dir.iterdir():
 
 
     with Image.open(path) as img:
-        width, height = img.size
         img_format = img.format
+        img_size = path.stat().st_size
+        img = ImageOps.exif_transpose(img)
+        width, height = img.size
         img_mode = img.mode
+        exif_data = img.getexif()
 
-        print(f"Size: {width} x {height}")
-        print(f"Format: {img_format}")
-        print(f"Mode: {img_mode}")
+        camera_make = None
+        camera_model = None
+        captured_at = None
 
+        for tag_id, tag_value in exif_data.items():
+            tag_name = TAGS.get(tag_id, tag_id)
+            if tag_name == "Make":
+                camera_make = tag_value.rstrip("\x00")
+            if tag_name == "Model":
+                camera_model = tag_value.rstrip("\x00")
+            if tag_name == "DateTime":
+                captured_at = tag_value
+
+        metadata = {
+            'filename' : path.name,
+            'width' : width,
+            'height' : height,
+            'size' : img_size,
+            'format' : img_format,
+            'camera_make' : camera_make,
+            'camera_model' : camera_model,
+            'captured_at' : captured_at,
+        }
+
+        metadata_records.append(metadata)
+        print(f"Metadata: {metadata}")
 
         scale = min(1, 1600 / width, 1600 / height)
         target_height = round(height * scale)
@@ -54,6 +83,27 @@ for path in input_dir.iterdir():
         img_thumbnail.save(thumbnail_dir / path.name)
 
         print(f"Thumbnail size: {img_thumbnail.size}")
+
+print(metadata_records)
+
+csv_path = output_dir / "metadata.csv"
+
+fieldnames = [
+        "filename",
+        "width",
+        "height",
+        "size",
+        "format",
+        "camera_make",
+        "camera_model",
+        "captured_at",
+    ]
+
+with open(csv_path, mode = "w", newline='', encoding="utf-8") as csvfile:
+    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+    writer.writeheader()
+    for row in metadata_records:
+        writer.writerow(row)
 
 if processed_count > 0:
     print(f"Processed {processed_count} images")
