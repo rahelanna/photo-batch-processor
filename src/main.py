@@ -1,9 +1,7 @@
-from PIL import Image, ImageOps
 from pathlib import Path
-import csv
 
-from src.processor import  resize_image, create_thumbnail
-from src.metadata import extract_metadata
+from src.processor import  process_image
+from src.metadata import  export_metadata_csv
 
 input_dir = Path("input")
 output_dir = Path("output")
@@ -30,50 +28,22 @@ for path in input_dir.iterdir():
     if extension not in supported_formats:
         continue
     print(path.name)
+
+    metadata = process_image(
+        path=path,
+        output_dir=output_dir,
+        thumbnail_dir=thumbnail_dir,
+        max_size=1600,
+        thumbnail_size=300,
+        quality=85)
+
+    metadata_records.append(metadata)
     processed_count += 1
-
-
-    with Image.open(path) as img:
-        img_format = img.format
-        img = ImageOps.exif_transpose(img)
-
-        metadata = extract_metadata(img, path, img_format)
-
-        metadata_records.append(metadata)
-        print(f"Metadata: {metadata}")
-
-        img_resize = resize_image(img, 1600)
-        output_path = output_dir / path.with_suffix(".webp").name
-        img_resize.save(output_path, format="webp", quality=85)
-
-        print(f"Resized img size: {img_resize.size}")
-        print(f"Saved resize image to: {output_path}")
-
-        img_thumbnail = create_thumbnail(img, max_size=300)
-        img_thumbnail.save(thumbnail_dir / path.name)
-
-        print(f"Thumbnail size: {img_thumbnail.size}")
 
 
 csv_path = output_dir / "metadata.csv"
 
-if metadata_records:
-    fieldnames = [
-            "filename",
-            "width",
-            "height",
-            "size",
-            "format",
-            "camera_make",
-            "camera_model",
-            "captured_at",
-        ]
-
-    with open(csv_path, mode = "w", newline='', encoding="utf-8") as csvfile:
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        writer.writeheader()
-        for row in metadata_records:
-            writer.writerow(row)
+export_metadata_csv(metadata_records, csv_path)
 
 if processed_count > 0:
     print(f"Processed {processed_count} images")

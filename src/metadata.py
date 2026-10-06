@@ -1,6 +1,7 @@
 from pathlib import Path
 from PIL import Image
 from PIL.ExifTags import TAGS
+import csv
 
 
 def extract_metadata(image: Image.Image, path: Path, image_format: str | None) -> dict:
@@ -32,3 +33,23 @@ def extract_metadata(image: Image.Image, path: Path, image_format: str | None) -
         'captured_at': captured_at,
     }
     return metadata
+
+
+def export_metadata_csv(metadata_records: list[dict], csv_path: Path) -> None:
+    if metadata_records:
+        fieldnames = [
+            "filename",
+            "width",
+            "height",
+            "size",
+            "format",
+            "camera_make",
+            "camera_model",
+            "captured_at",
+        ]
+
+        with open(csv_path, mode="w", newline='', encoding="utf-8") as csvfile:
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            writer.writeheader()
+            for row in metadata_records:
+                writer.writerow(row)
