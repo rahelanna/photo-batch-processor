@@ -1,10 +1,29 @@
+import argparse
 from pathlib import Path
 
 from src.processor import  process_image
 from src.metadata import  export_metadata_csv
 
-input_dir = Path("input")
-output_dir = Path("output")
+parser = argparse.ArgumentParser(
+    description="Process input directory and output directory and extract metadata")
+
+parser.add_argument("input")
+parser.add_argument("output")
+parser.add_argument("--max-size", type=int, default=1600)
+parser.add_argument("--quality", type=int, default=85)
+parser.add_argument("--thumbnail-size", type=int, default=300)
+
+args = parser.parse_args()
+
+if not 0 <= args.quality <= 100:
+    parser.error(f"quality must be between 0 and 100")
+if args.max_size <= 0:
+    parser.error(f"max_size must be greater than 0")
+if args.thumbnail_size <= 0:
+    parser.error(f"thumbnail_size must be greater than 0")
+
+input_dir = Path(args.input)
+output_dir = Path(args.output)
 thumbnail_dir = output_dir / "thumbnails"
 
 output_dir.mkdir(parents=True, exist_ok=True)
@@ -33,9 +52,9 @@ for path in input_dir.iterdir():
         path=path,
         output_dir=output_dir,
         thumbnail_dir=thumbnail_dir,
-        max_size=1600,
-        thumbnail_size=300,
-        quality=85)
+        max_size=args.max_size,
+        thumbnail_size=args.thumbnail_size,
+        quality=args.quality,)
 
     metadata_records.append(metadata)
     processed_count += 1
