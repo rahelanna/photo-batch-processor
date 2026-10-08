@@ -12,6 +12,7 @@ parser.add_argument("output")
 parser.add_argument("--max-size", type=int, default=1600)
 parser.add_argument("--quality", type=int, default=85)
 parser.add_argument("--thumbnail-size", type=int, default=300)
+parser.add_argument("--format", type=str,choices=["jpg", "png", "jpeg", "webp"], default="webp")
 
 args = parser.parse_args()
 
@@ -48,16 +49,21 @@ for path in input_dir.iterdir():
         continue
     print(path.name)
 
-    metadata = process_image(
-        path=path,
-        output_dir=output_dir,
-        thumbnail_dir=thumbnail_dir,
-        max_size=args.max_size,
-        thumbnail_size=args.thumbnail_size,
-        quality=args.quality,)
+    try:
 
-    metadata_records.append(metadata)
-    processed_count += 1
+        metadata = process_image(
+            path=path,
+            output_dir=output_dir,
+            thumbnail_dir=thumbnail_dir,
+            max_size=args.max_size,
+            thumbnail_size=args.thumbnail_size,
+            quality=args.quality,
+            output_format=args.format,)
+
+        metadata_records.append(metadata)
+        processed_count += 1
+    except Exception as e:
+        print(f"Failed to process {path.name}: {e}")
 
 
 csv_path = output_dir / "metadata.csv"
