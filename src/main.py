@@ -1,8 +1,12 @@
 import argparse
+import logging
 from pathlib import Path
 
 from src.processor import  process_image
 from src.metadata import  export_metadata_csv
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
 parser = argparse.ArgumentParser(
     description="Process input directory and output directory and extract metadata")
@@ -31,9 +35,9 @@ output_dir.mkdir(parents=True, exist_ok=True)
 thumbnail_dir.mkdir(parents=True, exist_ok=True)
 
 if input_dir.exists() and input_dir.is_dir():
-    print("Input dir exists")
+    logger.info(f"Found input directory: {input_dir}")
 else:
-    print("Input dir doesn't exist")
+    logger.error(f"Input directory does not exist: {input_dir}")
     exit(1)
 
 supported_formats = {".jpg", ".jpeg", ".png"}
@@ -41,13 +45,11 @@ processed_count = 0
 
 metadata_records = []
 
-print("input:")
-
 for path in input_dir.iterdir():
     extension = path.suffix.lower()
     if extension not in supported_formats:
         continue
-    print(path.name)
+    logger.info(f"Processing image: {path.name}")
 
     try:
 
@@ -63,7 +65,7 @@ for path in input_dir.iterdir():
         metadata_records.append(metadata)
         processed_count += 1
     except Exception as e:
-        print(f"Failed to process {path.name}: {e}")
+        logger.error(f"Failed to process image: {path.name}, error: {e}")
 
 
 csv_path = output_dir / "metadata.csv"
@@ -71,7 +73,7 @@ csv_path = output_dir / "metadata.csv"
 export_metadata_csv(metadata_records, csv_path)
 
 if processed_count > 0:
-    print(f"Processed {processed_count} images")
+    logger.info(f"Processed {processed_count} images")
 else:
     print("No supported images found in input directory. Supported formats: .jpg, .jpeg, .png")
 
