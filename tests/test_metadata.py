@@ -1,6 +1,6 @@
 from pathlib import Path
 from PIL import Image
-from src.metadata import extract_metadata
+from src.metadata import extract_metadata, export_metadata_csv
 
 
 def test_extract_metadata_basic_fields(tmp_path: Path) -> None:
@@ -48,3 +48,36 @@ def test_extract_metadata_exif_fields(tmp_path: Path) -> None:
     assert metadata["camera_make"] == "Canon"
     assert metadata["camera_model"] == "EOS Test"
     assert metadata["captured_at"] == "2026:10:09 16:45:00"
+
+
+def test_export_metadata_csv(tmp_path: Path) -> None:
+    csv_path = tmp_path / "metadata.csv"
+    metadata_records = [
+        {
+            "filename": "sample.jpg",
+            "width": 800,
+            "height": 600,
+            "size": 12345,
+            "format": "JPEG",
+            "camera_make": "Canon",
+            "camera_model": "EOS Test",
+            "captured_at": "2026:10:09 16:45:00",
+        }
+    ]
+
+    export_metadata_csv(metadata_records, csv_path)
+
+    assert csv_path.exists()
+
+    content = csv_path.read_text(encoding="utf-8")
+
+    assert "filename,width,height,size,format,camera_make,camera_model,captured_at" in content
+    assert "sample.jpg,800,600,12345,JPEG,Canon,EOS Test,2026:10:09 16:45:00" in content
+
+
+def test_export_metadata_csv_with_no_records(tmp_path: Path) -> None:
+    csv_path = tmp_path / "metadata.csv"
+
+    export_metadata_csv([], csv_path)
+
+    assert not csv_path.exists()
