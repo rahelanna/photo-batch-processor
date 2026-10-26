@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
 
-def process_directory(input_dir: Path, output_dir: Path, thumbnail_dir: Path, max_size: int, thumbnail_size: int, quality: int, output_format: str) -> tuple[list[dict], int]:
+def process_directory(input_dir: Path, output_dir: Path, thumbnail_dir: Path, max_size: int, thumbnail_size: int, quality: int, output_format: str, grayscale: bool) -> tuple[list[dict], int]:
     supported_formats = {".jpg", ".jpeg", ".png"}
     processed_count = 0
 
@@ -30,7 +30,8 @@ def process_directory(input_dir: Path, output_dir: Path, thumbnail_dir: Path, ma
                 max_size=max_size,
                 thumbnail_size=thumbnail_size,
                 quality=quality,
-                output_format=output_format,)
+                output_format=output_format,
+                grayscale=grayscale,)
 
             metadata_records.append(metadata)
             processed_count += 1
@@ -49,6 +50,7 @@ def main() -> None:
     parser.add_argument("--quality", type=int, default=85)
     parser.add_argument("--thumbnail-size", type=int, default=300)
     parser.add_argument("--format", type=str,choices=["jpg", "png", "jpeg", "webp"], default="webp")
+    parser.add_argument("--grayscale", action="store_true", help="convert processed image to grayscale")
 
     args = parser.parse_args()
 
@@ -72,7 +74,7 @@ def main() -> None:
         logger.error(f"Input directory does not exist: {input_dir}")
         exit(1)
 
-    metadata_records, processed_count = process_directory(input_dir, output_dir, thumbnail_dir, args.max_size, args.thumbnail_size, args.quality, args.format)
+    metadata_records, processed_count = process_directory(input_dir, output_dir, thumbnail_dir, args.max_size, args.thumbnail_size, args.quality, args.format, args.grayscale)
     csv_path = output_dir / "metadata.csv"
 
     export_metadata_csv(metadata_records, csv_path)

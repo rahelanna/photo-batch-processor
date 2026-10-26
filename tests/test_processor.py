@@ -51,6 +51,7 @@ def test_process_image_creates_output_files(tmp_path: Path) -> None:
         thumbnail_size=300,
         quality=85,
         output_format="webp",
+        grayscale=False
     )
 
     assert (output_dir / "sample.webp").exists()
@@ -84,6 +85,7 @@ def test_process_image_rejects_invalid_image(tmp_path: Path) -> None:
             thumbnail_size=300,
             quality=85,
             output_format="webp",
+            grayscale=False
         )
 
 
@@ -115,6 +117,7 @@ def test_process_directory_continues_after_invalid_image(tmp_path: Path) -> None
         thumbnail_size=300,
         quality=85,
         output_format="webp",
+        grayscale=False
     )
 
     assert processed_count == 1
@@ -151,6 +154,7 @@ def test_process_image_applies_exif_orientation(tmp_path: Path) -> None:
         thumbnail_size=300,
         quality=85,
         output_format="webp",
+        grayscale=False
     )
 
     assert metadata["width"] == 800
@@ -179,6 +183,7 @@ def test_process_image_converts_rgba_to_rgb_for_jpeg(tmp_path: Path) -> None:
         thumbnail_size=300,
         quality=85,
         output_format="jpg",
+        grayscale=False
     )
 
     output_path = output_dir / "transparent.jpg"
@@ -189,3 +194,30 @@ def test_process_image_converts_rgba_to_rgb_for_jpeg(tmp_path: Path) -> None:
         assert output_image.format == "JPEG"
         assert output_image.mode == "RGB"
         assert output_image.size == (800, 600)
+
+def test_process_image_converts_to_grayscale(tmp_path: Path) -> None:
+    input_path = tmp_path / "sample.jpg"
+    output_dir = tmp_path / "output"
+    thumbnail_dir = output_dir / "thumbnails"
+
+    output_dir.mkdir()
+    thumbnail_dir.mkdir()
+
+    image = Image.new("RGB", (800, 600), (255, 0, 0))
+    image.save(input_path, format="JPEG")
+
+    process_image(
+        path=input_path,
+        output_dir=output_dir,
+        thumbnail_dir=thumbnail_dir,
+        max_size=1600,
+        thumbnail_size=300,
+        quality=85,
+        output_format="png",
+        grayscale=True,
+    )
+
+    with Image.open(output_dir / "sample.png") as output_image:
+        assert output_image.mode == "L"
+    with Image.open(thumbnail_dir / "sample.jpg") as thumbnail_image:
+        assert thumbnail_image.mode == "L"

@@ -29,13 +29,16 @@ def create_thumbnail(image: Image.Image, max_size: int) -> Image.Image:
     img_thumbnail.thumbnail((max_size, max_size), Resampling.LANCZOS)
     return img_thumbnail
 
-def process_image(path: Path, output_dir: Path, thumbnail_dir: Path, max_size: int, thumbnail_size: int, quality: int, output_format: str) -> dict:
+def process_image(path: Path, output_dir: Path, thumbnail_dir: Path, max_size: int, thumbnail_size: int, quality: int, output_format: str, grayscale: bool) -> dict:
     with Image.open(path) as image:
         img_format = image.format
         image = ImageOps.exif_transpose(image)
         metadata = extract_metadata(image, path, img_format)
 
         resized_image = resize_image(image, max_size)
+
+        if grayscale:
+            resized_image = resized_image.convert("L")
 
         if output_format == "jpg":
             file_extension = ".jpg"
@@ -62,6 +65,8 @@ def process_image(path: Path, output_dir: Path, thumbnail_dir: Path, max_size: i
         logger.info(f"Saved processed image: {output_path}")
 
         thumbnail_image = create_thumbnail(image, thumbnail_size)
+        if grayscale:
+            thumbnail_image = thumbnail_image.convert("L")
         thumbnail_image.save(thumbnail_dir / path.name)
         logger.info(f"Saved thumbnail image: {thumbnail_dir / path.name}")
 
