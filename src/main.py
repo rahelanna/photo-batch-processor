@@ -15,7 +15,9 @@ def process_directory(input_dir: Path, output_dir: Path, thumbnail_dir: Path, ma
 
     metadata_records = []
 
-    for path in input_dir.iterdir():
+    paths = list(input_dir.iterdir())
+
+    for path in paths:
         extension = path.suffix.lower()
         if extension not in supported_formats:
             continue
@@ -65,24 +67,37 @@ def main() -> None:
     output_dir = Path(args.output)
     thumbnail_dir = output_dir / "thumbnails"
 
-    output_dir.mkdir(parents=True, exist_ok=True)
-    thumbnail_dir.mkdir(parents=True, exist_ok=True)
-
     if input_dir.exists() and input_dir.is_dir():
         logger.info(f"Found input directory: {input_dir}")
     else:
         logger.error(f"Input directory does not exist: {input_dir}")
-        exit(1)
+        raise SystemExit(1)
 
-    metadata_records, processed_count = process_directory(input_dir, output_dir, thumbnail_dir, args.max_size, args.thumbnail_size, args.quality, args.format, args.grayscale)
+    try:
+        output_dir.mkdir(parents=True, exist_ok=True)
+        thumbnail_dir.mkdir(parents=True, exist_ok=True)
+    except PermissionError as e:
+        logger.error(f"Cannot create output directory: {e}")
+        raise SystemExit(1)
+
+    try:
+        metadata_records, processed_count = process_directory(input_dir, output_dir, thumbnail_dir, args.max_size, args.thumbnail_size, args.quality, args.format, args.grayscale)
+    except PermissionError as e:
+        logger.error(f"Cannot access input directory: {input_dir}: {e}")
+        raise SystemExit(1)
+
     csv_path = output_dir / "metadata.csv"
 
-    export_metadata_csv(metadata_records, csv_path)
+    try:
+        export_metadata_csv(metadata_records, csv_path)
+    except PermissionError as e:
+        logger.error(f"Cannot write metadata CSV: {e}")
+        raise SystemExit(1)
 
     if processed_count > 0:
         logger.info(f"Processed {processed_count} images")
     else:
-        print("No supported images found in input directory. Supported formats: .jpg, .jpeg, .png")
+        logger.warning("No supported images found in input directory. Supported formats: .jpg, .jpeg, .png")
 
 
 if __name__ == "__main__":
