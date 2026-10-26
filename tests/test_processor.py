@@ -1,6 +1,6 @@
 from pathlib import Path
 import pytest
-from src.processor import calculate_target_size, create_thumbnail, resize_image, process_image
+from src.processor import calculate_target_size, create_thumbnail, resize_image, process_image, apply_grayscale
 from src.main import process_directory
 from PIL import Image, UnidentifiedImageError
 
@@ -221,3 +221,19 @@ def test_process_image_converts_to_grayscale(tmp_path: Path) -> None:
         assert output_image.mode == "L"
     with Image.open(thumbnail_dir / "sample.jpg") as thumbnail_image:
         assert thumbnail_image.mode == "L"
+
+
+def test_apply_grayscale_when_enabled() -> None:
+    image = Image.new("RGB", (100, 100))
+
+    result = apply_grayscale(image, True)
+
+    assert result.mode == "L"
+
+
+def test_apply_grayscale_when_disabled() -> None:
+    image = Image.new("RGB", (100, 100))
+
+    result = apply_grayscale(image, False)
+
+    assert result.mode == "RGB" 

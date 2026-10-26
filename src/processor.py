@@ -37,8 +37,7 @@ def process_image(path: Path, output_dir: Path, thumbnail_dir: Path, max_size: i
 
         resized_image = resize_image(image, max_size)
 
-        if grayscale:
-            resized_image = resized_image.convert("L")
+        resized_image = apply_grayscale(resized_image, grayscale)
 
         if output_format == "jpg":
             file_extension = ".jpg"
@@ -65,9 +64,15 @@ def process_image(path: Path, output_dir: Path, thumbnail_dir: Path, max_size: i
         logger.info(f"Saved processed image: {output_path}")
 
         thumbnail_image = create_thumbnail(image, thumbnail_size)
-        if grayscale:
-            thumbnail_image = thumbnail_image.convert("L")
+        thumbnail_image = apply_grayscale(thumbnail_image, grayscale)
         thumbnail_image.save(thumbnail_dir / path.name)
         logger.info(f"Saved thumbnail image: {thumbnail_dir / path.name}")
 
     return metadata
+
+
+def apply_grayscale(image: Image.Image, enabled: bool) -> Image.Image:
+    if not enabled:
+        return image
+
+    return image.convert("L")
