@@ -1,13 +1,20 @@
 import logging
+from pathlib import Path
+
 from PIL import Image, ImageOps
 from PIL.Image import Resampling
-from pathlib import Path
 
 from src.metadata import extract_metadata
 
 
 logger = logging.getLogger(__name__)
-def calculate_target_size(width, height, max_size) -> tuple[int, int]:
+
+
+def calculate_target_size(
+        width: int,
+        height: int,
+        max_size: int
+) -> tuple[int, int]:
 
     scale = min(1, max_size / width, max_size / height)
     target_width = round(width * scale)
@@ -29,6 +36,36 @@ def create_thumbnail(image: Image.Image, max_size: int) -> Image.Image:
     img_thumbnail.thumbnail((max_size, max_size), Resampling.LANCZOS)
     return img_thumbnail
 
+
+def get_output_format(output_format: str) -> tuple[str, str]:
+    formats = {
+        "jpg": (".jpg", "JPEG"),
+        "jpeg": (".jpeg", "JPEG"),
+        "png": (".png", "PNG"),
+        "webp": (".webp", "WEBP"),
+    }
+
+    return formats[output_format]
+
+def save_output_image(
+    image: Image.Image,
+    output_path: Path,
+    pillow_format: str,
+    quality: int,
+) -> None:
+    if pillow_format == "JPEG" and image.mode != "RGB":
+        image = image.convert("RGB")
+
+    if pillow_format == "PNG":
+        image.save(output_path, format=pillow_format)
+    else:
+        image.save(
+            output_path,
+            format=pillow_format,
+            quality=quality,
+        )
+
+
 def process_image(path: Path, output_dir: Path, thumbnail_dir: Path, max_size: int, thumbnail_size: int, quality: int, output_format: str, grayscale: bool) -> dict:
     with Image.open(path) as image:
         img_format = image.format
@@ -39,28 +76,12 @@ def process_image(path: Path, output_dir: Path, thumbnail_dir: Path, max_size: i
 
         resized_image = apply_grayscale(resized_image, grayscale)
 
-        if output_format == "jpg":
-            file_extension = ".jpg"
-            pillow_format = "JPEG"
-        elif output_format == "jpeg":
-            file_extension = ".jpeg"
-            pillow_format = "JPEG"
-        elif output_format == "png":
-            file_extension = ".png"
-            pillow_format = "PNG"
-        else:
-            file_extension = ".webp"
-            pillow_format = "WEBP"
+        file_extension, pillow_format = get_output_format(output_format)
 
         output_path = output_dir / path.with_suffix(file_extension).name
 
-        if pillow_format == "JPEG" and resized_image.mode != "RGB":
-            resized_image = resized_image.convert("RGB")
+        save_output_image(resized_image, output_path, pillow_format, quality)
 
-        if pillow_format == "PNG":
-            resized_image.save(output_path, format=pillow_format)
-        else:
-            resized_image.save(output_path, format=pillow_format, quality=quality)
         logger.info(f"Saved processed image: {output_path}")
 
         thumbnail_image = create_thumbnail(image, thumbnail_size)

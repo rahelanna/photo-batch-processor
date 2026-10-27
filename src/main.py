@@ -8,8 +8,41 @@ from src.metadata import  export_metadata_csv
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description="Process input directory and output directory and extract metadata"
+    )
 
-def process_directory(input_dir: Path, output_dir: Path, thumbnail_dir: Path, max_size: int, thumbnail_size: int, quality: int, output_format: str, grayscale: bool) -> tuple[list[dict], int]:
+    parser.add_argument("input")
+    parser.add_argument("output")
+    parser.add_argument("--max-size", type=int, default=1600)
+    parser.add_argument("--quality", type=int, default=85)
+    parser.add_argument("--thumbnail-size", type=int, default=300)
+    parser.add_argument(
+        "--format",
+        type=str,
+        choices=["jpg", "png", "jpeg", "webp"],
+        default="webp",
+    )
+    parser.add_argument(
+        "--grayscale",
+        action="store_true",
+        help="Convert processed images to grayscale",
+    )
+
+    return parser
+
+
+def process_directory(
+        input_dir: Path,
+        output_dir: Path,
+        thumbnail_dir: Path,
+        max_size: int,
+        thumbnail_size: int,
+        quality: int,
+        output_format: str,
+        grayscale: bool
+) -> tuple[list[dict], int]:
     supported_formats = {".jpg", ".jpeg", ".png"}
     processed_count = 0
 
@@ -37,23 +70,13 @@ def process_directory(input_dir: Path, output_dir: Path, thumbnail_dir: Path, ma
 
             metadata_records.append(metadata)
             processed_count += 1
-        except Exception as e:
+        except OSError as e:
             logger.error(f"Failed to process image: {path.name}, error: {e}")
 
     return metadata_records, processed_count
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-    description="Process input directory and output directory and extract metadata")
-
-    parser.add_argument("input")
-    parser.add_argument("output")
-    parser.add_argument("--max-size", type=int, default=1600)
-    parser.add_argument("--quality", type=int, default=85)
-    parser.add_argument("--thumbnail-size", type=int, default=300)
-    parser.add_argument("--format", type=str,choices=["jpg", "png", "jpeg", "webp"], default="webp")
-    parser.add_argument("--grayscale", action="store_true", help="convert processed image to grayscale")
-
+    parser = build_parser()
     args = parser.parse_args()
 
     if not 0 <= args.quality <= 100:
@@ -81,7 +104,16 @@ def main() -> None:
         raise SystemExit(1)
 
     try:
-        metadata_records, processed_count = process_directory(input_dir, output_dir, thumbnail_dir, args.max_size, args.thumbnail_size, args.quality, args.format, args.grayscale)
+        metadata_records, processed_count = process_directory(
+            input_dir,
+            output_dir,
+            thumbnail_dir,
+            args.max_size,
+            args.thumbnail_size,
+            args.quality,
+            args.format,
+            args.grayscale,
+        )
     except PermissionError as e:
         logger.error(f"Cannot access input directory: {input_dir}: {e}")
         raise SystemExit(1)

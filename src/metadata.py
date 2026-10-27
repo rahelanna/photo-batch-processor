@@ -1,8 +1,26 @@
+import csv
 from pathlib import Path
+
 from PIL import Image
 from PIL.ExifTags import TAGS
-import csv
 
+
+METADATA_FIELDNAMES = [
+    "filename",
+    "width",
+    "height",
+    "size",
+    "format",
+    "camera_make",
+    "camera_model",
+    "captured_at",
+]
+
+def clean_exif_text(value: object) -> str | None:
+    if not isinstance(value, str):
+        return None
+
+    return value.rstrip("\x00").strip()
 
 def extract_metadata(image: Image.Image, path: Path, image_format: str | None) -> dict:
     width, height = image.size
@@ -16,9 +34,9 @@ def extract_metadata(image: Image.Image, path: Path, image_format: str | None) -
     for tag_id, tag_value in exif_data.items():
         tag_name = TAGS.get(tag_id, tag_id)
         if tag_name == "Make":
-            camera_make = tag_value.rstrip("\x00").strip()
+            camera_make = clean_exif_text(tag_value)
         if tag_name == "Model":
-            camera_model = tag_value.rstrip("\x00").strip()
+            camera_model = clean_exif_text(tag_value)
         if tag_name == "DateTime":
             captured_at = tag_value
 
@@ -37,19 +55,9 @@ def extract_metadata(image: Image.Image, path: Path, image_format: str | None) -
 
 def export_metadata_csv(metadata_records: list[dict], csv_path: Path) -> None:
     if metadata_records:
-        fieldnames = [
-            "filename",
-            "width",
-            "height",
-            "size",
-            "format",
-            "camera_make",
-            "camera_model",
-            "captured_at",
-        ]
+        fieldnames = METADATA_FIELDNAMES
 
         with open(csv_path, mode="w", newline='', encoding="utf-8") as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             writer.writeheader()
-            for row in metadata_records:
-                writer.writerow(row)
+            writer.writerows(metadata_records)

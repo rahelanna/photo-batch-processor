@@ -1,8 +1,17 @@
 from pathlib import Path
 import pytest
-from src.processor import calculate_target_size, create_thumbnail, resize_image, process_image, apply_grayscale
-from src.main import process_directory
+
 from PIL import Image, UnidentifiedImageError
+
+from src.processor import (
+    calculate_target_size,
+    create_thumbnail,
+    get_output_format,
+    resize_image,
+    process_image,
+    apply_grayscale
+)
+from src.main import process_directory
 
 
 def test_calculate_target_size_landscape() -> None:
@@ -236,4 +245,16 @@ def test_apply_grayscale_when_disabled() -> None:
 
     result = apply_grayscale(image, False)
 
-    assert result.mode == "RGB" 
+    assert result.mode == "RGB"
+
+
+def test_get_output_format_webp() -> None:
+    result = get_output_format("webp")
+
+    assert result == (".webp", "WEBP")
+
+
+def test_get_output_format_jpeg() -> None:
+    result = get_output_format("jpeg")
+
+    assert result == (".jpeg", "JPEG")
