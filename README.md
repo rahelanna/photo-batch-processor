@@ -138,6 +138,26 @@ photo2.png,1920,1080,845231,PNG,,,
 
 Metadata fields may be empty when the source image does not contain the corresponding EXIF information.
 
+## Examples
+
+The repository includes a small example dataset under the `examples/` directory.
+
+```text
+examples/
+    input/
+        sample.jpg
+    output/
+        sample.webp
+        metadata.csv
+        thumbnails/
+            sample.jpg
+```
+
+You can reproduce the example output with:
+
+```bash
+python -m src.main examples/input examples/output --max-size 800 --quality 85 --format webp
+```
 
 ## Testing
 
